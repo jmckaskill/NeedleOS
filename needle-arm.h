@@ -1,49 +1,50 @@
 static inline struct ndl_task *ndl_current_task() {
-    register struct ndl_task *r9 asm("r9");
+    register struct ndl_task *r9 __asm__("r9");
+    __asm__ volatile("": "=r"(r9));
     return r9;
 }
 
 static inline uintptr_t ndl_syscall0(int num) {
-    register int svcno asm("r7") = num;
-    register uintptr_t ret asm("r0");
+    register int svcno __asm__("r7") = num;
+    register uintptr_t ret __asm__("r0");
     __asm__ volatile("svc #0" : "=r"(ret) : "r"(svcno));
     return ret;
 }
 
 static inline uintptr_t ndl_syscall1(int num, uintptr_t arg0) {
-    register int svcno asm("r7") = num;
-    register uintptr_t a0 asm("r0") = arg0;
-    register uintptr_t ret asm("r0");
+    register int svcno __asm__("r7") = num;
+    register uintptr_t a0 __asm__("r0") = arg0;
+    register uintptr_t ret __asm__("r0");
     __asm__ volatile("svc #0" : "=r"(ret) : "r"(svcno), "r"(a0));
     return ret;
 }
 
 static inline uintptr_t ndl_syscall2(int num, uintptr_t arg0, uintptr_t arg1) {
-    register int svcno asm("r7") = num;
-    register uintptr_t a0 asm("r0") = arg0;
-    register uintptr_t a1 asm("r1") = arg1;
-    register uintptr_t ret asm("r0");
+    register int svcno __asm__("r7") = num;
+    register uintptr_t a0 __asm__("r0") = arg0;
+    register uintptr_t a1 __asm__("r1") = arg1;
+    register uintptr_t ret __asm__("r0");
     __asm__ volatile("svc #0" : "=r"(ret) : "r"(svcno), "r"(a0), "r"(a1));
     return ret;
 }
 
 static inline uintptr_t ndl_syscall3(int num, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2) {
-    register int svcno asm("r7") = num;
-    register uintptr_t a0 asm("r0") = arg0;
-    register uintptr_t a1 asm("r1") = arg1;
-    register uintptr_t a2 asm("r2") = arg2;
-    register uintptr_t ret asm("r0");
+    register int svcno __asm__("r7") = num;
+    register uintptr_t a0 __asm__("r0") = arg0;
+    register uintptr_t a1 __asm__("r1") = arg1;
+    register uintptr_t a2 __asm__("r2") = arg2;
+    register uintptr_t ret __asm__("r0");
     __asm__ volatile("svc #0" : "=r"(ret) : "r"(svcno), "r"(a0), "r"(a1), "r"(a2));
     return ret;
 }
 
 static inline uintptr_t ndl_syscall4(int num, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3) {
-    register int svcno asm("r7") = num;
-    register uintptr_t a0 asm("r0") = arg0;
-    register uintptr_t a1 asm("r1") = arg1;
-    register uintptr_t a2 asm("r2") = arg2;
-    register uintptr_t a3 asm("r3") = arg3;
-    register uintptr_t ret asm("r0");
+    register int svcno __asm__("r7") = num;
+    register uintptr_t a0 __asm__("r0") = arg0;
+    register uintptr_t a1 __asm__("r1") = arg1;
+    register uintptr_t a2 __asm__("r2") = arg2;
+    register uintptr_t a3 __asm__("r3") = arg3;
+    register uintptr_t ret __asm__("r0");
     __asm__ volatile("svc #0" : "=r"(ret) : "r"(svcno), "r"(a0), "r"(a1), "r"(a2), "r"(a3));
     return ret;
 }

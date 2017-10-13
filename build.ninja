@@ -1,0 +1,29 @@
+TOOLCHAIN_DIR = toolchain
+CC = $TOOLCHAIN_DIR/host/bin/clang
+LD = $TOOLCHAIN_DIR/host/bin/ld.lld.exe
+CFLAGSCMN = -mstrict-align -Os $INCLUDES -I $TOOLCHAIN_DIR/lib/arm/include --target=armv7---none-eabi -Xclang -target-feature -Xclang -neon --system-header-prefix=sys -fdiagnostics-format=msvc -D_GNU_SOURCE -DHAVE_THREADS_H -nostdinc
+CFLAGS = $CFLAGSCMN -Wall -Werror -Wno-missing-braces -Wno-unused-function
+LIBS_A = $TOOLCHAIN_DIR/lib/arm/libclang-rt.a
+
+rule cc
+ command = $CC $CFLAGS -std=c11 -fdata-sections -ffunction-sections -MMD -MF $out.d -c $in -o $out -pedantic
+ deps = gcc
+ depfile = $out.d
+ description = ARM-CC $in
+
+rule clink
+ command = $LD --nostdlib --whole-archive --gc-sections -o $out --script $in $LIBS_A
+ description = C-ARM-EXE $out
+
+rule objcopy
+ command = $TOOLCHAIN_DIR/host/bin/arm-none-eabi-objcopy -O binary $in $out
+ description = OBJCOPY $out
+
+build arm-cortex-a.o: cc arm-cortex-a.S
+build test.o: cc test.c
+build test.exe: clink am335x.ld $
+ test.o $
+ arm-cortex-a.o $
+
+build test.bin: objcopy test.exe
+
