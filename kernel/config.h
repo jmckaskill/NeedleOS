@@ -8,6 +8,8 @@
 #define NUM_USER 4096
 #define NUM_SHARED 4096
 
+#define NUM_CORE_FREE_USER 32
+
 #define FAST_MEM   0x40300000U
 #define STACK_TOP  0x40310000U
 #define MAIN_MEM   0x80000000U

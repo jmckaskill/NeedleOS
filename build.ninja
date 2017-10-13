@@ -19,11 +19,12 @@ rule objcopy
  command = $TOOLCHAIN_DIR/host/bin/arm-none-eabi-objcopy -O binary $in $out
  description = OBJCOPY $out
 
-build arm-cortex-a.o: cc arm-cortex-a.S
+build kernel.o: cc kernel/arm/kernel.S
 build test.o: cc test.c
 build test.exe: clink am335x.ld $
  test.o $
- arm-cortex-a.o $
+ kernel.o $
+
 
 build test.bin: objcopy test.exe
 
