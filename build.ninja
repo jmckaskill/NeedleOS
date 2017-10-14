@@ -1,12 +1,12 @@
 TOOLCHAIN_DIR = toolchain
 CC = $TOOLCHAIN_DIR/host/bin/clang
 LD = $TOOLCHAIN_DIR/host/bin/ld.lld.exe
-CFLAGSCMN = -mstrict-align -Os $INCLUDES -I $TOOLCHAIN_DIR/lib/arm/include --target=armv7---none-eabi -Xclang -target-feature -Xclang -neon --system-header-prefix=sys -fdiagnostics-format=msvc -D_GNU_SOURCE -DHAVE_THREADS_H -nostdinc
+CFLAGSCMN = -mstrict-align -Os $INCLUDES -I $TOOLCHAIN_DIR/lib/arm/include --target=thumbv7a---none-eabi -mcpu=cortex-a8 -mthumb -Xclang -target-feature -Xclang -neon --system-header-prefix=sys -fdiagnostics-format=msvc -D_GNU_SOURCE -DHAVE_THREADS_H -nostdinc
 CFLAGS = $CFLAGSCMN -Wall -Werror -Wno-missing-braces -Wno-unused-function
 LIBS_A = $TOOLCHAIN_DIR/lib/arm/libclang-rt.a
 
 rule cc
- command = $CC $CFLAGS -std=c11 -fdata-sections -ffunction-sections -MMD -MF $out.d -c $in -o $out -pedantic
+ command = $CC $CFLAGS -std=c11  -MMD -MF $out.d -c $in -o $out -pedantic
  deps = gcc
  depfile = $out.d
  description = ARM-CC $in
@@ -21,8 +21,12 @@ rule objcopy
 
 build kernel.o: cc kernel/arm/kernel.S
 build test.o: cc test.c
+build alloc.o: cc kernel/alloc.c
+build global-alloc.o: cc kernel/arm/global-alloc.S
 build test.exe: clink am335x.ld $
  test.o $
+ alloc.o $
+ global-alloc.o $
  kernel.o $
 
 

@@ -9,5 +9,9 @@ SECTIONS {
     .data : { *(.data) }
     .rodata : { *(.rodata) }
     .bss : { *(.bss) }
+    CORE        = 0x40300000;
+    KERNEL      = 0x40301000;
+    DESCRIPTORS = 0x80000000;
+    PAGES       = 0x80010000;
 }
 

@@ -3,6 +3,7 @@
 #define NUM_CORES 1
 #define CACHE_SIZE 16
 #define CACHE_SHIFT 4
+#define PTRSZ 4
 
 #define NUM_KERNEL 1024
 #define NUM_USER 4096
