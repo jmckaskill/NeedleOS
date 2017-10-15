@@ -46,9 +46,9 @@ typedef void (*ndl_dispatch_fn)(void*, ndl_tick_t tick, int cmd, ndl_obj_t obj);
 
 #include "needle-heap.h"
 
-void ndl_init();
-int ndl_errno();
-
+#define NDL_ENOMEM -1
 #define NDL_EINVAL -2
+#define NDL_EINPROGRESS -3
+#define NDL_ENEEDSTART -4
 
 

@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+/.vs
+/.vscode
+/.ninja_deps
+/.ninja_log
+Debug
+*.vcxproj.filters
