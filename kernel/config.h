@@ -1,7 +1,8 @@
 #pragma once
 
+//#define SMP
 #define NUM_CORES 1
-#define CACHE_SIZE 16
+#define CACHE_SIZE 64
 #define CACHE_SHIFT 4
 #define PTRSZ 4
 

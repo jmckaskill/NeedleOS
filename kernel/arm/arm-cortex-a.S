@@ -19,9 +19,8 @@ cancel_task:
 start_task:
 set_task_priority:
 transfer_channel:
-transfer_shared:
+transfer_page:
+transfer:
 dispatch:
-alloc_shared:
-release_shared:
 
 

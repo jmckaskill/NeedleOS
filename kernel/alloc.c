@@ -1,28 +1,24 @@
 #include "kernel.h"
 
-#define acquire_core_lock() __asm__ volatile ("cpsid aif")
-#define release_core_lock() __asm__ volatile ("cpsie aif")
-
-struct desc *global_alloc(struct kernel_pool *p);
-
-void *alloc_page() {
-    struct task *t = CORE.running;
+struct page *alloc_page(struct core *c) {
+    struct kernel *k = c->kernel;
+    struct task *t = c->running;
     if (t->user.count >= t->user.quota) {
         return NULL;
     }
 
     acquire_core_lock();
 
-    struct desc *d = CORE.user.first;
+    struct desc *d = c->user.first;
     if (d) {
         struct desc *next = d->next;
-        CORE.user.first = d->next;
+        c->user.first = d->next;
         if (!next) {
-            CORE.user.last = NULL;
+            c->user.last = NULL;
         }
-        CORE.user.count--;
+        c->user.count--;
     } else {
-        d = global_alloc(&KERNEL.user);
+        d = global_alloc(&k->user);
         if (!d) {
             return NULL;
         }
@@ -36,6 +32,6 @@ void *alloc_page() {
 
     release_core_lock();
 
-    size_t idx = d - &DESCRIPTORS;
-    return &PAGES + idx;
+    size_t idx = d - k->user.begin;
+    return k->user.pages + idx;
 }

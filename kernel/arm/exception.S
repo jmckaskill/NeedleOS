@@ -3,7 +3,6 @@
 .align 5 // 32 bytes
 .code 16
 
-
 exception_table:
 reset:
     b.w reset
@@ -23,60 +22,50 @@ irq:
 fiq:
     b.w fiq
 
+#define SYSNO r0
+
 svc_exception:
     // r0 = syscall number
-    // r1-r4 = syscall arguments
-    // r12 = scratch
-    // binary search
+    // r1-r3 = syscall arguments
+    // binary search with 3 way test end node
     // this is preferred to a jump table as it makes better use of the branch predictor
-    // end node is a 3 way test
-    // max is 16 -> 3 * 8 covers this
+    // max is 10 -> 3*2*2 = 12
 sys_0_up:
-    cmp r0, #12
-    bhs sys_12_up
-sys_0_11:
-    cmp r0, #6
-    bhs sys_6_11
+    cmp SYSNO, #6
+    bhs sys_6_up
 sys_0_5:
-    cmp r0, #3
+    cmp SYSNO, #3
     bhs sys_3_5
 sys_0_2:
-    cmp r0, #1
-    blo alloc_page // 0
+    cmp SYSNO, #1
+    blo do_alloc_page // 0
     beq release_page // 1
     b send // 2
 sys_3_5:
-    cmp r0, #4
+    cmp SYSNO, #4
     blo recv // 3
     beq current_tick // 4
     b create_channel // 5
-sys_6_11:
-    cmp r0, #9
-    bhs sys_9_11
+sys_6_up:
+    cmp SYSNO, #9
+    bhs sys_9_up
 sys_6_8:
-    cmp r0, #7
+    cmp SYSNO, #7
     blo close_channel // 6
-    beq set_dispatch_fn // 7
-    b create_task // 8
-sys_9_11:
-    cmp r0, #10
-    blo cancel_task // 9
-    beq start_task // 10
-    b set_task_priority // 11
-sys_12_up:
-    cmp r0, #15
-    bhi sys_16_up
-sys_12_15:
-    cmp r0, #13
-    blo transfer_channel // 12
-    beq transfer_shared // 13
-    b dispatch // 14 
-sys_16_up:
-    cmp r0, #16
-    blo alloc_shared // 15
-    beq release_shared // 16
+    beq create_task // 7
+    b start_task // 8
+sys_9_up:
+    cmp SYSNO, #10
+    blo transfer // 9
+    b dispatch // 10
+    mov r0, #NDL_ENOSVC // 11+
+    subs pc, lr, #0
 
-
-no_service:
-    mov r0, #NDL_ENOSVC
+do_alloc_page:
+    mov r0, sp
+    mov r12, #MODE_SYS
+    msr CPSR_c, r12
+    push {lr}
+    bl alloc_page
+    pop {lr}
     subs pc, lr, #0
