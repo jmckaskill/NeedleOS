@@ -74,11 +74,11 @@ static inline ndl_tick_t ndl_current_tick() {
     return ndl_syscall0(NDL_SVC_CURRENT_TICK);
 }
 
-static inline ndl_obj_t ndl_create_channel(ndl_dispatch_fn fn, void *udata) {
+static inline int ndl_create_channel(ndl_dispatch_fn fn, void *udata) {
     return ndl_syscall3(NDL_SVC_CREATE_CHANNEL, 0, (uintptr_t) (void*) fn, (uintptr_t) udata);
 }
 
-static inline ndl_obj_t ndl_set_dispatch_fn(int chan, ndl_dispatch_fn fn, void *udata) {
+static inline int ndl_set_dispatch_fn(int chan, ndl_dispatch_fn fn, void *udata) {
     return ndl_syscall3(NDL_SVC_CREATE_CHANNEL, chan, (uintptr_t) (void*) fn, (uintptr_t) udata);
 }
 

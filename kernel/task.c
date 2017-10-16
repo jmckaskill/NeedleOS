@@ -1,9 +1,9 @@
 #include "kernel.h"
 #include <string.h>
 
-int create_task(struct core *c) {
+int create_task(struct task *t) {
+	struct core *c = t->core;
 	struct kernel *k = c->kernel;
-	struct task *t = c->running;
 
 	if (t->creating_task) {
 		return NDL_EINPROGRESS;
@@ -27,39 +27,34 @@ void free_task(struct core *c, struct task *t) {
 
 	for (struct desc *d = t->mem.first; d != NULL;) {
 		struct desc *next = d->next;
-
-		acquire_core_lock(c);
-		do_release_page(c, d);
-		release_core_lock(c);
-
+		release_desc(c, d);
 		d = next;
 	}
 
 	struct desc *dt = page_to_desc(&k->kernel_mem, t);
-
-	acquire_core_lock(c);
 
 	// remove from the core list
 	if (t->next) {
 		t->next->prev = t->prev;
 	}
 	if (t->prev) {
-		t->prev->next = t->prev;
+		t->prev->next = t->next;
 	}
-	if (c->tasks == t) {
-		c->tasks = t->next;
+	if (c->ready == t) {
+		c->ready = t->next;
+	}
+	if (c->asleep == t) {
+		c->asleep = t->next;
 	}
 
 	// free the task memory itself
 	os_close_task(t);
 	global_release(&k->kernel_mem, dt, dt);
-
-	release_core_lock(c);
 }
 
-int start_task(struct core *c, ndl_task_fn fn, void *udata) {
+int start_task(struct task *t, ndl_task_fn fn, void *udata) {
+	struct core *c = t->core;
 	struct kernel *k = c->kernel;
-	struct task *t = c->running;
 	struct task *nt = t->creating_task;
 
 	if (!nt) {
@@ -75,15 +70,16 @@ int start_task(struct core *c, ndl_task_fn fn, void *udata) {
 	}
 
 	// add new task to this core's task list as it's now schedulable
-	nt->next = c->tasks;
+	nt->next = c->ready;
 	nt->prev = NULL;
 	if (nt->next) {
 		nt->next->prev = nt;
 	}
-	c->tasks = nt;
+	c->ready = nt;
+	nt->core = c;
 
-	// this will switch immediately to the new thread
-	c->running = nt;
-	os_start_task(c, nt, fn, udata);
+	os_setup_task(c, nt, fn, udata);
+
+	// we'll run the task next time the scheduler is run
 	return 0;
 }

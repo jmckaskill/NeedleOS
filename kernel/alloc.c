@@ -1,8 +1,9 @@
 #include "kernel.h"
+#include <assert.h>
 
-struct page *alloc_page(struct core *c) {
+struct page *alloc_page(struct task *t) {
+	struct core *c = t->core;
     struct kernel *k = c->kernel;
-    struct task *t = c->running;
 	
 	if (t->creating_task) {
 		t = t->creating_task;
@@ -11,8 +12,6 @@ struct page *alloc_page(struct core *c) {
     if (t->mem.count >= t->mem.quota) {
         return NULL;
     }
-
-    acquire_core_lock(c);
 
     struct desc *d = c->mem.first;
     if (d) {
@@ -40,11 +39,10 @@ struct page *alloc_page(struct core *c) {
 		next->prev = d;
 	}
 
-    release_core_lock(c);
 	return desc_to_page(&k->user_mem, d);
 }
 
-void do_release_page(struct core *c, struct desc *d) {
+void release_desc(struct core *c, struct desc *d) {
 	struct kernel *k = c->kernel;
 
 	d->prev = NULL;
@@ -68,31 +66,41 @@ void do_release_page(struct core *c, struct desc *d) {
 	}
 }
 
-int release_page(struct core *c, void *pg) {
+struct desc *verify_page(struct task *t, void *pg) {
+	struct core *c = t->core;
 	struct kernel *k = c->kernel;
-	struct task *t = c->running;
-
-	if (t->creating_task) {
-		t = t->creating_task;
-	}
-
+	
 	// check that the argument is an actual page pointer
 	if ((uintptr_t) pg & ((PGSZ)-1)) {
-		return NDL_EINVAL;
+		return NULL;
 	}
 
 	// in the user memory pool
 	struct desc *d = page_to_desc(&k->user_mem, pg);
 	if (d < k->user_mem.begin || d >= k->user_mem.end) {
-		return NDL_EINVAL;
+		return NULL;
 	}
 
 	// and assigned to this task
 	if (d->task != t) {
-		return NDL_EINVAL;
+		return NULL;
 	}
 
-	acquire_core_lock(c);
+	return d;
+}
+
+int release_page(struct task *t, void *pg) {
+	struct core *c = t->core;
+	struct kernel *k = c->kernel;
+
+	if (t->creating_task) {
+		t = t->creating_task;
+	}
+
+	struct desc *d = verify_page(t, pg);
+	if (!d) {
+		return NDL_EINVAL;
+	}
 	
 	// remove from the task's page list
 	if (d->next) {
@@ -107,9 +115,35 @@ int release_page(struct core *c, void *pg) {
 
 	t->mem.count--;
 
-	do_release_page(c, d);
-
-	release_core_lock(c);
+	release_desc(c, d);
 
 	return 0;
+}
+
+void transfer_page(struct task *from, struct task *to, struct desc *d) {
+	struct core *c = from->core;
+	struct kernel *k = c->kernel;
+
+	assert(from->core == to->core);
+
+	// remove from the source page list
+	if (d->next) {
+		d->next->prev = d->prev;
+	}
+	if (d->prev) {
+		d->prev->next = d->next;
+	}
+	if (from->mem.first == d) {
+		from->mem.first = d->next;
+	}
+	from->mem.count--;
+
+	// add to the target page list
+	d->next = to->mem.first;
+	d->prev = NULL;
+	d->task = to;
+	if (d->next) {
+		d->next->prev = d;
+	}
+	to->mem.count++;
 }
