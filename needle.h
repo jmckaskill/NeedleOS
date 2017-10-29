@@ -12,6 +12,7 @@
 typedef uint32_t ndl_tick_t;
 typedef ptrdiff_t ndl_obj_t;
 #define NDL_MS_TO_TICK(ms) ((ms) * 1000 / 32768)
+#define NDL_TICK_PER_SEC 32768
 
 #define NDL_OBJ_BUF(TYPE, P) ((TYPE *) (void*) ((uintptr_t) (P) & ~0xFFFU))
 #define NDL_OBJ_TX(P) ((P) & (0x1F << 5))

@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 
-// no need to protect against false sharing on a single core
+// no need to protect against false sharing on a single cpu
 #ifndef SMP
 #define CACHE_ALIGN
 typedef struct desc * volatile aligned_desc_ptr;
@@ -48,20 +48,20 @@ struct core_pool {
     size_t count;
 };
 
-struct os_core {
+struct platform_cpu {
 	void *align;
 };
 
-struct core {
+struct cpu {
     struct kernel *kernel;
     struct task *running;
     struct core_pool mem;
 	struct task *ready;
 	struct task *asleep;
 
-	// last item is OS/platform specific and takes
+	// last item is platform specific and takes
 	// up the rest of the page
-	struct os_core os;
+	struct platform_cpu platform;
 };
 
 struct msg {
@@ -106,7 +106,7 @@ struct os_task {
 
 struct task {
 	struct task *next, *prev;
-	struct core *core;
+	struct cpu *cpu;
     struct task_pool mem;
 	struct task *creating_task;
     struct chan *rx[32];
@@ -123,18 +123,18 @@ struct task {
 
 struct desc *global_alloc(struct kernel_pool *p);
 void global_release(struct kernel_pool *p, struct desc *first, struct desc *last);
-void os_setup_task(struct core *c, struct task *t, ndl_task_fn fn, void *udata);
+void os_start_task(struct cpu *c, struct task *t, ndl_task_fn fn, void *udata);
 void os_close_task(struct task *t);
-void os_resume_task(struct core *c, struct task *t);
-void os_yield(struct core *c);
+void os_switch(struct cpu *c, struct task *t);
 ndl_tick_t current_tick();
 
-void release_desc(struct core *c, struct desc *d);
+void release_desc(struct cpu *c, struct desc *d);
 struct desc *verify_page(struct task *t, void *pg);
 void transfer_page(struct task *from, struct task *to, struct desc *d);
 
 struct page *alloc_page(struct task *t);
 int release_page(struct task *t, void *pg);
+int start_initial_task(struct cpu *c);
 int create_task(struct task *t);
 int start_task(struct task *t, ndl_task_fn fn, void *udata);
 int create_channel(struct task *t, int chan, ndl_dispatch_fn fn, void *udata);
@@ -142,10 +142,10 @@ int send_msg(struct task *t, int chan, int cmd, ndl_obj_t obj);
 int recv_msg(struct task *t, uint32_t mask, ndl_tick_t wakeup, struct ndl_message *r);
 int transfer(struct task *t, ndl_obj_t obj);
 
-void free_task(struct core *c, struct task *t);
-void schedule_next(struct core *c);
+void free_task(struct cpu *c, struct task *t);
+void schedule_next(struct cpu *c);
 
-extern void app_main();
+extern void app_main(void*);
 
 
 static inline void *desc_to_page(struct kernel_pool *p, struct desc *d) {

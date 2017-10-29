@@ -1,6 +1,7 @@
 #include "kernel.h"
 #include <string.h>
 
+
 int create_task(struct task *t) {
 	struct core *c = t->core;
 	struct kernel *k = c->kernel;
@@ -22,34 +23,22 @@ int create_task(struct task *t) {
 	return 0;
 }
 
-void free_task(struct core *c, struct task *t) {
+int start_initial_task(struct core *c) {
 	struct kernel *k = c->kernel;
+	struct desc *dt = global_alloc(&k->kernel_mem);
+	if (!dt) {
+		return NDL_ENOMEM;
+	}
+	struct task *nt = (struct task*) desc_to_page(&k->kernel_mem, dt);
+	memset(nt, 0, sizeof(*nt));
+	nt->mem.quota = 1024;
+	nt->next = NULL;
+	nt->prev = NULL;
+	nt->cpu = c;
 
-	for (struct desc *d = t->mem.first; d != NULL;) {
-		struct desc *next = d->next;
-		release_desc(c, d);
-		d = next;
-	}
-
-	struct desc *dt = page_to_desc(&k->kernel_mem, t);
-
-	// remove from the core list
-	if (t->next) {
-		t->next->prev = t->prev;
-	}
-	if (t->prev) {
-		t->prev->next = t->next;
-	}
-	if (c->ready == t) {
-		c->ready = t->next;
-	}
-	if (c->asleep == t) {
-		c->asleep = t->next;
-	}
-
-	// free the task memory itself
-	os_close_task(t);
-	global_release(&k->kernel_mem, dt, dt);
+	c->ready = nt;
+	os_start_task(c, nt, &app_main, NULL);
+	return 0;
 }
 
 int start_task(struct task *t, ndl_task_fn fn, void *udata) {
@@ -83,3 +72,34 @@ int start_task(struct task *t, ndl_task_fn fn, void *udata) {
 	// we'll run the task next time the scheduler is run
 	return 0;
 }
+
+void free_task(struct core *c, struct task *t) {
+	struct kernel *k = c->kernel;
+
+	for (struct desc *d = t->mem.first; d != NULL;) {
+		struct desc *next = d->next;
+		release_desc(c, d);
+		d = next;
+	}
+
+	struct desc *dt = page_to_desc(&k->kernel_mem, t);
+
+	// remove from the core list
+	if (t->next) {
+		t->next->prev = t->prev;
+	}
+	if (t->prev) {
+		t->prev->next = t->next;
+	}
+	if (c->ready == t) {
+		c->ready = t->next;
+	}
+	if (c->asleep == t) {
+		c->asleep = t->next;
+	}
+
+	// free the task memory itself
+	os_close_task(t);
+	global_release(&k->kernel_mem, dt, dt);
+}
+
