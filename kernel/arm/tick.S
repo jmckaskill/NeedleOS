@@ -3,7 +3,7 @@
 .syntax unified
 .code 16
 
-current_tick:
+kern_tick:
     // no arguments
     // return
     // r0 - current tick

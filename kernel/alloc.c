@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include <assert.h>
 
-struct page *alloc_page(struct task *t) {
+struct page *kern_alloc_page(struct kern_task *t) {
 	struct core *c = t->core;
     struct kernel *k = c->kernel;
 	
@@ -13,22 +13,22 @@ struct page *alloc_page(struct task *t) {
         return NULL;
     }
 
-    struct desc *d = c->mem.first;
+    struct kern_desc *d = c->mem.first;
     if (d) {
-        struct desc *next = d->next;
+        struct kern_desc *next = d->next;
         c->mem.first = d->next;
         if (!next) {
             c->mem.last = NULL;
         }
         c->mem.count--;
     } else {
-        d = global_alloc(&k->user_mem);
+        d = kern_alloc(&k->user_mem);
         if (!d) {
             return NULL;
         }
     }
 
-    struct desc *next = t->mem.first;
+    struct kern_desc *next = t->mem.first;
     d->next = next;
     d->prev = NULL;
 	d->task = t;
@@ -42,14 +42,14 @@ struct page *alloc_page(struct task *t) {
 	return desc_to_page(&k->user_mem, d);
 }
 
-void release_desc(struct core *c, struct desc *d) {
+void release_desc(struct core *c, struct kern_desc *d) {
 	struct kernel *k = c->kernel;
 
 	d->prev = NULL;
 	d->task = NULL;
 
 	// add to the core list
-	struct desc *next = c->mem.first;
+	struct kern_desc *next = c->mem.first;
 	d->next = c->mem.first;
 	c->mem.first = d;
 	if (!next) {
@@ -59,14 +59,14 @@ void release_desc(struct core *c, struct desc *d) {
 
 	// see if we want to release to the global free list
 	if (c->mem.count > 32) {
-		global_release(&k->user_mem, c->mem.first, c->mem.last);
+		kern_free(&k->user_mem, c->mem.first, c->mem.last);
 		c->mem.first = NULL;
 		c->mem.last = NULL;
 		c->mem.count = 0;
 	}
 }
 
-struct desc *verify_page(struct task *t, void *pg) {
+struct kern_desc *verify_page(struct kern_task *t, void *pg) {
 	struct core *c = t->core;
 	struct kernel *k = c->kernel;
 	
@@ -76,7 +76,7 @@ struct desc *verify_page(struct task *t, void *pg) {
 	}
 
 	// in the user memory pool
-	struct desc *d = page_to_desc(&k->user_mem, pg);
+	struct kern_desc *d = page_to_desc(&k->user_mem, pg);
 	if (d < k->user_mem.begin || d >= k->user_mem.end) {
 		return NULL;
 	}
@@ -89,7 +89,7 @@ struct desc *verify_page(struct task *t, void *pg) {
 	return d;
 }
 
-int release_page(struct task *t, void *pg) {
+int kern_free_page(struct kern_task *t, void *pg) {
 	struct core *c = t->core;
 	struct kernel *k = c->kernel;
 
@@ -97,7 +97,7 @@ int release_page(struct task *t, void *pg) {
 		t = t->creating_task;
 	}
 
-	struct desc *d = verify_page(t, pg);
+	struct kern_desc *d = verify_page(t, pg);
 	if (!d) {
 		return NDL_EINVAL;
 	}
@@ -120,7 +120,7 @@ int release_page(struct task *t, void *pg) {
 	return 0;
 }
 
-void transfer_page(struct task *from, struct task *to, struct desc *d) {
+void transfer_page(struct kern_task *from, struct kern_task *to, struct kern_desc *d) {
 	struct core *c = from->core;
 	struct kernel *k = c->kernel;
 

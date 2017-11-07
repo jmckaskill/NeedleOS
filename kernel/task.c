@@ -2,19 +2,18 @@
 #include <string.h>
 
 
-int create_task(struct task *t) {
-	struct core *c = t->core;
-	struct kernel *k = c->kernel;
+int kern_fork(struct kern_task *t) {
+	struct kern_cpu *c = t->cpu;
 
 	if (t->creating_task) {
 		return NDL_EINPROGRESS;
 	}
 
-	struct desc *dt = global_alloc(&k->kernel_mem);
+	struct kern_desc *dt = kern_alloc(c->kernel_mem);
 	if (!dt) {
 		return NDL_ENOMEM;
 	}
-	struct task *nt = (struct task*) desc_to_page(&k->kernel_mem, dt);
+	struct kern_task *nt = (struct kern_task*) desc_to_page(&k->kernel_mem, dt);
 	memset(nt, 0, sizeof(*nt));
 	nt->mem.quota = 1024;
 
@@ -23,13 +22,12 @@ int create_task(struct task *t) {
 	return 0;
 }
 
-int start_initial_task(struct core *c) {
-	struct kernel *k = c->kernel;
-	struct desc *dt = global_alloc(&k->kernel_mem);
+struct kern_task *init_task(struct kern_cpu *c) {
+	struct kern_desc *dt = kern_alloc(c->kernel_mem);
 	if (!dt) {
-		return NDL_ENOMEM;
+		return NULL;
 	}
-	struct task *nt = (struct task*) desc_to_page(&k->kernel_mem, dt);
+	struct kern_task *nt = (struct kern_task*) desc_to_page(c->kernel_mem, dt);
 	memset(nt, 0, sizeof(*nt));
 	nt->mem.quota = 1024;
 	nt->next = NULL;
@@ -37,14 +35,13 @@ int start_initial_task(struct core *c) {
 	nt->cpu = c;
 
 	c->ready = nt;
-	os_start_task(c, nt, &app_main, NULL);
-	return 0;
+	return nt;
 }
 
-int start_task(struct task *t, ndl_task_fn fn, void *udata) {
+int kern_start(struct kern_task *t, ndl_task_fn fn, void *udata) {
 	struct core *c = t->core;
 	struct kernel *k = c->kernel;
-	struct task *nt = t->creating_task;
+	struct kern_task *nt = t->creating_task;
 
 	if (!nt) {
 		return NDL_ENEEDSTART;
@@ -73,16 +70,16 @@ int start_task(struct task *t, ndl_task_fn fn, void *udata) {
 	return 0;
 }
 
-void free_task(struct core *c, struct task *t) {
+void free_task(struct core *c, struct kern_task *t) {
 	struct kernel *k = c->kernel;
 
-	for (struct desc *d = t->mem.first; d != NULL;) {
-		struct desc *next = d->next;
+	for (struct kern_desc *d = t->mem.first; d != NULL;) {
+		struct kern_desc *next = d->next;
 		release_desc(c, d);
 		d = next;
 	}
 
-	struct desc *dt = page_to_desc(&k->kernel_mem, t);
+	struct kern_desc *dt = page_to_desc(&k->kernel_mem, t);
 
 	// remove from the core list
 	if (t->next) {
@@ -100,6 +97,6 @@ void free_task(struct core *c, struct task *t) {
 
 	// free the task memory itself
 	os_close_task(t);
-	global_release(&k->kernel_mem, dt, dt);
+	kern_free(&k->kernel_mem, dt, dt);
 }
 

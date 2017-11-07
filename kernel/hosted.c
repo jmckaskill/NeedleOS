@@ -26,13 +26,13 @@ static pthread_attr_t min_stack;
 #define PAGE_ALIGN(P) (((uintptr_t) (P) + (PGSZ) - 1) & ~((PGSZ)-1))
 
 static void init_mem_pool(struct kernel_pool *p, size_t sz) {
-    size_t num_pages = (sz / (PGSZ + sizeof(struct desc))) - 1;
+    size_t num_pages = (sz / (PGSZ + sizeof(struct kern_desc))) - 1;
 #ifdef _WIN32
     char *data = (char*) VirtualAlloc(NULL, sz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 #else
     char *data = (char*) mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
 #endif
-	p->begin = (struct desc*) data;
+	p->begin = (struct kern_desc*) data;
 	p->end = p->begin + num_pages;
 	p->pages = (struct page*) PAGE_ALIGN(p->end);
 	p->free = NULL;
@@ -61,7 +61,7 @@ int main() {
     pthread_attr_setstacksize(&min_stack, PTHREAD_MIN_STACK);
 #endif
 
-	struct desc *dc = global_alloc(&kernel.kernel_mem);
+	struct kern_desc *dc = kern_alloc(&kernel.kernel_mem);
 	struct core *c = (struct core*) desc_to_page(&kernel.kernel_mem, dc);
 	memset(c, 0, sizeof(*c));
 	c->kernel = &kernel;
@@ -78,12 +78,12 @@ int main() {
 }
 
 static THREAD_RET interrupt_thread(void *udata) {
-    struct cpu *c = (struct cpu*) udata;
+    struct kern_cpu *c = (struct kern_cpu*) udata;
 }
 
 static THREAD_RET task_thread(void *udata) {
-    struct task *t = (struct task*) udata;
-    struct cpu *c = t->cpu;
+    struct kern_task *t = (struct kern_task*) udata;
+    struct kern_cpu *c = t->cpu;
     struct hosted_task *ht = (struct hosted_task*) &t->platform;
     struct hosted_cpu *hc = (struct hosted_cpu*) &c->platform;
     tss_set(thread_task, t);
@@ -98,9 +98,9 @@ static THREAD_RET task_thread(void *udata) {
     return 0;
 }
 
-struct desc *global_alloc(struct kernel_pool *p) {
+struct kern_desc *kern_alloc(struct kernel_pool *p) {
     mtx_lock(&global_lock);
-	struct desc *ret = p->free;
+	struct kern_desc *ret = p->free;
 	if (ret) {
 		p->free = ret->next;
 	} else if (p->top < p->end) {
@@ -113,16 +113,16 @@ struct desc *global_alloc(struct kernel_pool *p) {
 	return ret;
 }
 
-void global_release(struct kernel_pool *p, struct desc *first, struct desc *last) {
+void kern_free(struct kernel_pool *p, struct kern_desc *first, struct kern_desc *last) {
 	mtx_lock(&global_lock);
 	last->next = p->free;
 	p->free = first;
 	mtx_unlock(&global_lock);
 }
 
-static void yield(struct cpu *c) {
+static void yield(struct kern_cpu *c) {
     struct hosted_cpu *hc = (struct hosted_cpu*) &c->platform;
-    struct task *from = (struct task*) tss_get(thread_task);
+    struct kern_task *from = (struct kern_task*) tss_get(thread_task);
     // the tss variable gets unset when the thread wants to exit
     if (from) {
         struct hosted_task *hf = (struct hosted_task*) &from->platform;
@@ -134,7 +134,7 @@ static void yield(struct cpu *c) {
     }
 }
 
-void os_switch(struct cpu *c, struct task *t) {
+void os_switch(struct kern_cpu *c, struct kern_task *t) {
     struct hosted_task *ht = (struct hosted_task*) &t->platform;
     struct hosted_cpu *hc = (struct hosted_cpu*) &c->platform;
     
@@ -146,7 +146,7 @@ void os_switch(struct cpu *c, struct task *t) {
     yield(c);
 }
 
-void os_start_task(struct cpu *c, struct task *t, ndl_task_fn fn, void *udata) {
+void os_start_task(struct kern_cpu *c, struct kern_task *t, ndl_task_fn fn, void *udata) {
     struct hosted_task *ht = (struct hosted_task*) &t->platform;
     ht->run = true;
     cnd_init(&ht->wakeup);
@@ -164,12 +164,12 @@ void os_start_task(struct cpu *c, struct task *t, ndl_task_fn fn, void *udata) {
     yield(c);
 }
 
-void os_close_task(struct task *t) {
+void os_close_task(struct kern_task *t) {
     struct hosted_task *ht = (struct hosted_task*) &t->platform;
     cnd_destroy(&ht->wakeup);
 }
 
-ndl_tick_t current_tick() {
+ndl_tick_t kern_tick() {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
     return (NDL_TICK_PER_SEC * ts.ts_sec) + (ts.ts_nsec * NDL_TICK_PER_SEC) / 1000000000;
@@ -180,37 +180,37 @@ ndl_tick_t current_tick() {
 
 
 void *ndl_alloc_page() {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-    void *ret = alloc_page(t);
+    void *ret = kern_alloc_page(t);
     mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
 
 int ndl_release_page(void *pg) {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = release_page(t, pg);
+	int ret = kern_free_page(t, pg);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
 
 int ndl_send(int chan, int cmd, void *buf, int flags) {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = send_msg(t, chan, cmd, (uintptr_t) buf | flags);
+	int ret = kern_send(t, chan, cmd, (uintptr_t) buf | flags);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
 
 int ndl_recv(uint32_t mask, ndl_tick_t wakeup, struct ndl_message *r) {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = recv_msg(t, mask, wakeup, r);
+	int ret = kern_recv(t, mask, wakeup, r);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
@@ -218,14 +218,14 @@ int ndl_recv(uint32_t mask, ndl_tick_t wakeup, struct ndl_message *r) {
 int ndl_dispatch();
 
 ndl_tick_t ndl_current_tick() {
-	return current_tick();
+	return kern_tick();
 }
 
 int ndl_create_channel(ndl_dispatch_fn fn, void *udata) {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = create_channel(t, 0, fn, udata);
+	int ret = kern_pipe(t, 0, fn, udata);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
@@ -234,37 +234,37 @@ int ndl_set_dispatch_fn(int chan, ndl_dispatch_fn fn, void *udata);
 int ndl_close_channel(int chan);
 
 int ndl_create_task() {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = create_task(t);
+	int ret = kern_fork(t);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
 
 int ndl_cancel_task() {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = start_task(t, NULL, NULL);
+	int ret = kern_start(t, NULL, NULL);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
 
 int ndl_start_task(ndl_task_fn fn, void *udata) {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
 	struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = start_task(t, fn, udata);
+	int ret = kern_start(t, fn, udata);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }
 
 int ndl_transfer(void *buf, int flags) {
-	struct task *t = (struct task*) tss_get(thread_task);
+	struct kern_task *t = (struct kern_task*) tss_get(thread_task);
     struct hosted_cpu *hc = (struct hosted_cpu*) &t->cpu->platform;
     mtx_lock(&hc->cpu_lock);
-	int ret = transfer(t, (uintptr_t) buf | flags);
+	int ret = kern_move(t, (uintptr_t) buf | flags);
 	mtx_unlock(&hc->cpu_lock);
 	return ret;
 }

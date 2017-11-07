@@ -4,7 +4,7 @@
 .code 16
 
 
-release_page:
+kern_free_page:
     // arguments
     // r0 - page to release
     // return
@@ -39,7 +39,7 @@ release_page:
     cmp r3, r2
     bne invalid_value
     
-    // transfer the page from the task list to the core list
+    // kern_move the page from the task list to the core list
     // disable interrupts as an interrupt may try and kill
     // the interrupt
     cpsie aif

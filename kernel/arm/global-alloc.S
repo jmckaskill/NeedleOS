@@ -14,11 +14,11 @@
 #define TEMP r2
 
 .syntax unified
-.global global_alloc
+.global kern_alloc
 .thumb
 .thumb_func
 
-global_alloc:
+kern_alloc:
     // function to obtain a resource from a global free list
     // as this is accessed by multiple cores we need to use exclusive access
     // interrupts must be already disabled

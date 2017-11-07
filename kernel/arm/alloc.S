@@ -3,7 +3,7 @@
 .syntax unified
 .code 16
 
-alloc_page:
+kern_alloc_page:
     // no arguments
     // return
     // r0 - returned page

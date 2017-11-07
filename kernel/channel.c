@@ -27,7 +27,7 @@ static int find_chan_slot(struct chan **channels) {
 	return 0;
 }
 
-int create_channel(struct task *t, int chan, ndl_dispatch_fn fn, void *udata) {
+int kern_pipe(struct kern_task *t, int chan, ndl_dispatch_fn fn, void *udata) {
 	struct core *c = t->core;
 	struct kernel *k = c->kernel;
 
@@ -42,7 +42,7 @@ int create_channel(struct task *t, int chan, ndl_dispatch_fn fn, void *udata) {
 			return NDL_ENOMEM;
 		}
 
-		struct desc *dc = global_alloc(&k->kernel_mem);
+		struct kern_desc *dc = kern_alloc(&k->kernel_mem);
 		if (!dc) {
 			return NDL_ENOMEM;
 		}
@@ -79,7 +79,7 @@ int create_channel(struct task *t, int chan, ndl_dispatch_fn fn, void *udata) {
 	return chan;
 }
 
-int send_msg(struct task *t, int chan, int cmd, ndl_obj_t obj) {
+int kern_send(struct kern_task *t, int chan, int cmd, ndl_obj_t obj) {
 	struct core *c = t->core;
 
 	struct chan *ch = t->tx[NDL_OBJ_TX(chan) >> 5];
@@ -90,7 +90,7 @@ int send_msg(struct task *t, int chan, int cmd, ndl_obj_t obj) {
 		return NDL_EINVAL;
 	}
 	
-	struct task *rxer = ch->receiver;
+	struct kern_task *rxer = ch->receiver;
 
 
 	struct msg *m = ch->free;
@@ -99,7 +99,7 @@ int send_msg(struct task *t, int chan, int cmd, ndl_obj_t obj) {
 		return NDL_EWOULDBLOCK;
 	}
 
-	struct desc *d = NULL;
+	struct kern_desc *d = NULL;
 	if (pg && t != ch->receiver && (d = verify_page(t, pg)) == NULL) {
 		// invalid page
 		return NDL_EINVAL;
@@ -136,7 +136,7 @@ int send_msg(struct task *t, int chan, int cmd, ndl_obj_t obj) {
 	return 0;
 }
 
-int recv_msg(struct task *t, uint32_t mask, ndl_tick_t wakeup, struct ndl_message *r) {
+int kern_recv(struct kern_task *t, uint32_t mask, ndl_tick_t wakeup, struct ndl_message *r) {
 	struct core *c = t->core;
 
 	unsigned idx;
@@ -182,7 +182,7 @@ int recv_msg(struct task *t, uint32_t mask, ndl_tick_t wakeup, struct ndl_messag
 	}
 
 	r->chan = chan;
-	r->tick = current_tick();
+	r->tick = kern_tick();
 	r->cmd = msg->cmd;
 	r->obj = msg->obj;
 
@@ -193,13 +193,13 @@ int recv_msg(struct task *t, uint32_t mask, ndl_tick_t wakeup, struct ndl_messag
 	return 0;
 }
 
-int transfer(struct task *t, ndl_obj_t obj) {
+int kern_move(struct kern_task *t, ndl_obj_t obj) {
 	struct core *c = t->core;
 	int tx = NDL_OBJ_TX(obj);
 	int rx = NDL_OBJ_RX(obj);
 	void *pg = NDL_OBJ_BUF(void, obj);
 
-	struct task *to = t->creating_task;
+	struct kern_task *to = t->creating_task;
 	if (!to) {
 		return NDL_ENEEDSTART;
 	}
@@ -228,7 +228,7 @@ int transfer(struct task *t, ndl_obj_t obj) {
 		}
 	}
 
-	struct desc *d = NULL;
+	struct kern_desc *d = NULL;
 	if (pg && (d = verify_page(t, pg)) != NULL) {
 		return NDL_EINVAL;
 	}

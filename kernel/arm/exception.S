@@ -1,5 +1,16 @@
 #include "common.S"
 
+.global svc_alloc_page
+.global svc_release_page
+.global svc_send
+.global svc_recv
+.global svc_create_channel
+.global svc_close_channel
+.global svc_create_task
+.global svc_start_task
+.global svc_transfer
+.global svc_dispatch
+
 .align 5 // 32 bytes
 .code 16
 
@@ -51,26 +62,27 @@ sys_0_2:
     beq sys_1
     bhs sys_2
 sys_0:
-    bl alloc_page
+    bl svc_alloc_page
     b sys_ret
 sys_1:
-    bl release_page
+    bl svc_release_page
     b sys_ret
 sys_2:
-    bl send
+    bl svc_send
     b sys_ret
 sys_3_5:
     cmp SYSNO, #4
     beq sys_4
     bhs sys_5
 sys_3:
-    bl recv
+    bl svc_recv
     b sys_ret
 sys_4:
-    bl current_tick
+    ldr r0, =TICK_COUNT_ADDR
+    ldr r0, [r0]
     b sys_ret
 sys_5:
-    bl create_channel
+    bl svc_create_channel
     b sys_ret
 sys_6_up:
     cmp SYSNO, #9
@@ -80,23 +92,23 @@ sys_6_8:
     beq sys_7
     bhs sys_8
 sys_6:
-    bl close_channel
+    bl svc_close_channel
     b sys_ret
 sys_7:
-    bl create_task
+    bl svc_create_task
     b sys_ret
 sys_8:
-    bl start_task
+    bl svc_start_task
     b sys_ret
 sys_9_up:
     cmp SYSNO, #10
     beq sys_10
     bhs sys_11_up
 sys_9:
-    bl transfer
+    bl svc_transfer
     b sys_ret
 sys_10:
-    bl dispatch
+    bl svc_dispatch
     b sys_ret
 sys_11_up:
     mov r0, #NDL_ENOSVC // 11+

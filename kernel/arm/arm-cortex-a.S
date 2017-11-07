@@ -10,17 +10,17 @@
 send:
 recv:
 
-create_task:
+kern_fork:
 
-create_channel:
-close_channel:
+kern_pipe:
+kern_close:
 set_dispatch_fn:
 cancel_task:
-start_task:
+kern_start:
 set_task_priority:
 transfer_channel:
 transfer_page:
-transfer:
-dispatch:
+kern_move:
+kern_dispatch:
 
 

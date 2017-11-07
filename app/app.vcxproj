@@ -19,41 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="./alloc.c" />
-    <ClCompile Include="./arm/alloc-global.S" />
-    <ClCompile Include="./arm/alloc.S" />
-    <ClCompile Include="./arm/arm-cortex-a.S" />
-    <ClCompile Include="./arm/common.S" />
-    <ClCompile Include="./arm/exception.S" />
-    <ClCompile Include="./arm/global-alloc.S" />
-    <ClCompile Include="./arm/init.S" />
-    <ClCompile Include="./arm/kernel.S" />
-    <ClCompile Include="./arm/release-global.S" />
-    <ClCompile Include="./arm/release.S" />
-    <ClCompile Include="./arm/start.S" />
-    <ClCompile Include="./arm/tick.S" />
-    <ClCompile Include="./channel.c" />
-    <ClCompile Include="./hosted/win32.c" />
-    <ClCompile Include="./hosted.c" />
-    <ClCompile Include="./init.c" />
-    <ClCompile Include="./release.c" />
-    <ClCompile Include="./scheduler.c" />
-    <ClCompile Include="./send.c" />
-    <ClCompile Include="./task.c" />
-    <ClCompile Include="./tinycthread.c" />
-    <ClCompile Include="exception.c" />
+    <ClCompile Include="./hosted-posix.c" />
+    <ClCompile Include="./test.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="./config.h" />
-    <ClInclude Include="./kernel.h" />
-    <ClInclude Include="./tinycthread.h" />
+    <ClInclude Include="./needle-heap.h" />
+    <ClInclude Include="./needle.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9273FB38-F89F-4E3A-A210-290DB0C2A33D}</ProjectGuid>
+    <ProjectGuid>{727A018B-03BC-411B-BB6F-7D224A38137A}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
-    <ProjectName>bin - kernel.exe</ProjectName>
+    <ProjectName>bin - app.exe</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -95,44 +73,44 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeOutput>$(SolutionDir)\bin\win32-release\kernel.exe</NMakeOutput>
+    <NMakeOutput>$(SolutionDir)\bin\win32-release\app.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-release/kernel.exe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-release/kernel.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-release/kernel.exe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-release/kernel.exe</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-release/app.exe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-release/app.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-release/app.exe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-release/app.exe</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SolutionDir);$(ProjectDir)</NMakeIncludeSearchPath>
     <IntDir>$(SolutionDir)\obj\$(Configuration)\</IntDir>
     <SourcePath />
     <ExcludePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(SolutionDir)\bin\win32-debug\kernel.exe</NMakeOutput>
+    <NMakeOutput>$(SolutionDir)\bin\win32-debug\app.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-debug/kernel.exe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-debug/kernel.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-debug/kernel.exe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-debug/kernel.exe</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-debug/app.exe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-debug/app.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/win32-debug/app.exe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/win32-debug/app.exe</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SolutionDir);$(ProjectDir)</NMakeIncludeSearchPath>
     <IntDir>$(SolutionDir)\obj\$(Configuration)\</IntDir>
     <SourcePath />
     <ExcludePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ARM-Release|Win32'">
-    <NMakeOutput>$(SolutionDir)\bin\arm-release\kernel.exe</NMakeOutput>
+    <NMakeOutput>$(SolutionDir)\bin\arm-release\app.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>__linux__;__arm__;NDEBUG</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-release/kernel.exe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-release/kernel.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-release/kernel.exe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-release/kernel.exe</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-release/app.exe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-release/app.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-release/app.exe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-release/app.exe</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SolutionDir);$(ProjectDir);$(SolutionDir)\toolchain\lib\arm\include;$(SolutionDir)\toolchain\host\lib\clang\4.0.1\include</NMakeIncludeSearchPath>
     <IntDir>$(SolutionDir)\obj\$(Configuration)\</IntDir>
     <SourcePath />
     <ExcludePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ARM-Debug|Win32'">
-    <NMakeOutput>$(SolutionDir)\bin\arm-debug\kernel.exe</NMakeOutput>
+    <NMakeOutput>$(SolutionDir)\bin\arm-debug\app.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>__linux__;__arm__;DEBUG</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-debug/kernel.exe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-debug/kernel.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-debug/kernel.exe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-debug/kernel.exe</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-debug/app.exe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-debug/app.exe &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja bin/arm-debug/app.exe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>"c:\Program Files\git\usr\bin\sh.exe" --login $(SolutionDir)\toolchain\install.sh $(SolutionDir)\toolchain &amp;&amp; $(SolutionDir)\toolchain\host\bin\ninja -C $(SolutionDir) -f msvc.ninja -t clean bin/arm-debug/app.exe</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SolutionDir);$(ProjectDir);$(SolutionDir)\toolchain\lib\arm\include;$(SolutionDir)\toolchain\host\lib\clang\4.0.1\include</NMakeIncludeSearchPath>
     <IntDir>$(SolutionDir)\obj\$(Configuration)\</IntDir>
     <SourcePath />
